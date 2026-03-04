@@ -1,7 +1,7 @@
 package com.kosign.customer_crud.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kosign.customer_crud.dto.model.StatusInfo;
+import com.kosign.customer_crud.dto.model.exceptionModel.StatusInfo;
 import com.kosign.customer_crud.dto.response.APIResponse.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -1,4 +1,4 @@
-package com.kosign.customer_crud.dto.model;
+package com.kosign.customer_crud.dto.model.exceptionModel;
 
 import lombok.*;
 

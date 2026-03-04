@@ -7,12 +7,13 @@ import com.kosign.customer_crud.dto.model.CustomerModel;
 import com.kosign.customer_crud.dto.model.UserInfo;
 import com.kosign.customer_crud.dto.request.AuthRequest;
 import com.kosign.customer_crud.dto.request.CustomerRequest;
+import com.kosign.customer_crud.dto.request.FullUpdateCustomerRequest;
+import com.kosign.customer_crud.dto.request.PartialUpdateCustomerRequest;
 import com.kosign.customer_crud.dto.response.APIResponse.PaginationResponse;
 import com.kosign.customer_crud.dto.response.APIResponse.PayloadResponse;
 import com.kosign.customer_crud.dto.response.ModelResponse.AuthResponse;
 import com.kosign.customer_crud.dto.response.ModelResponse.CustomerResponse;
-import com.kosign.customer_crud.exception.InvalidCredentialException;
-import com.kosign.customer_crud.exception.NotFoundException;
+import com.kosign.customer_crud.exception.*;
 import com.kosign.customer_crud.repository.CustomerRepository;
 import com.kosign.customer_crud.service.CustomerService;
 import com.kosign.customer_crud.service.JwtService;
@@ -27,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -121,6 +123,16 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponse createCustomer(CustomerRequest request) {
+
+        if (!request.hasContact()){
+            throw new ContactValidationException("Either email or phone must be provided.");
+        }
+
+        if (request.getEmail() != null && !request.getEmail().isBlank()){
+            if (customerRepository.existsByEmail(request.getEmail())){
+                throw new DuplicatedEmailException(request.getEmail());
+            }
+        }
         CustomerModel customerModel = new CustomerModel();
         customerModel.setUsername(request.getUsername());
         customerModel.setTypes(request.getType());
@@ -133,5 +145,50 @@ public class CustomerServiceImpl implements CustomerService {
         customerModel.setUpdatedAt(LocalDateTime.now());
 
         return customerRepository.save(customerModel).toCustomerResponse();
+    }
+
+    @Override
+    public CustomerResponse changeCustomerById(Long customerId, FullUpdateCustomerRequest request) {
+        CustomerModel customerModel = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+
+        if (!request.hasContact()){
+            throw new ContactValidationException("Either email or phone must be provided.");
+        }
+
+        if (request.getEmail() != null && !request.getEmail().isBlank()){
+            if (customerRepository.existsByEmailAndCustomerIdNot(request.getEmail(),customerId)){
+                throw new DuplicatedEmailException(request.getEmail());
+            }
+        }
+
+        customerModel.setUsername(request.getUsername());
+        customerModel.setTypes(request.getType());
+        customerModel.setEmail(request.getEmail());
+        customerModel.setPhone(request.getPhone());
+        customerModel.setStatus(request.getStatus());
+
+        return customerRepository.save(customerModel).toCustomerResponse();
+    }
+
+    @Override
+    public CustomerResponse changeCustomerPhoneAndStatus(Long customerId, PartialUpdateCustomerRequest request) {
+        CustomerModel customerModel = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+
+        customerModel.setPhone(request.getPhone());
+        customerModel.setStatus(request.getStatus());
+        return customerRepository.save(customerModel).toCustomerResponse();
+    }
+
+    @Override
+    public void deleteCustomerById(Long customerId) {
+        CustomerModel customerModel = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+
+        if(customerModel.getActiveOrderCount() != null && customerModel.getActiveOrderCount() > 0){
+            throw new ActiveOrderException(customerId, customerModel.getActiveOrderCount());
+        }
+        customerRepository.deleteById(customerId);
     }
 }

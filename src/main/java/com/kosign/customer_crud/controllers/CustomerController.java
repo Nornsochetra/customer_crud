@@ -2,8 +2,10 @@ package com.kosign.customer_crud.controllers;
 
 import com.kosign.customer_crud.dto.enumeration.Status;
 import com.kosign.customer_crud.dto.enumeration.Types;
-import com.kosign.customer_crud.dto.model.StatusInfo;
+import com.kosign.customer_crud.dto.model.exceptionModel.StatusInfo;
 import com.kosign.customer_crud.dto.request.CustomerRequest;
+import com.kosign.customer_crud.dto.request.FullUpdateCustomerRequest;
+import com.kosign.customer_crud.dto.request.PartialUpdateCustomerRequest;
 import com.kosign.customer_crud.dto.response.APIResponse.ApiResponse;
 import com.kosign.customer_crud.dto.response.APIResponse.PayloadResponse;
 import com.kosign.customer_crud.dto.response.ModelResponse.CustomerResponse;
@@ -15,10 +17,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/customers")
@@ -80,6 +79,56 @@ public class CustomerController {
                 .data(customerService.retrieveCustomerById(customerId))
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{customerId}")
+    public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerById(
+            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
+            @RequestBody @Valid FullUpdateCustomerRequest request
+    ) {
+        CustomerResponse customerResponse = customerService.changeCustomerById(customerId,request);
+
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code("SUCCESS")
+                .message("Customer updated successfully.")
+                .build();
+        ApiResponse<CustomerResponse> response = ApiResponse.<CustomerResponse>builder()
+                .status(statusInfo)
+                .data(customerResponse)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PatchMapping("/{customerId}")
+    public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerPhoneAndStatus(
+            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
+            @RequestBody @Valid PartialUpdateCustomerRequest request
+    ){
+        CustomerResponse customerResponse = customerService.changeCustomerPhoneAndStatus(customerId,request);
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code("SUCCESS")
+                .message("Customer updated successfully.")
+                .build();
+        ApiResponse<CustomerResponse> response = ApiResponse.<CustomerResponse>builder()
+                .status(statusInfo)
+                .data(customerResponse)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @DeleteMapping("/{customerId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCustomerById(
+            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId
+    ){
+        customerService.deleteCustomerById(customerId);
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code("SUCCESS")
+                .message("Customer deleted successfully.")
+                .build();
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .status(statusInfo)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 

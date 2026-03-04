@@ -52,6 +52,8 @@ public class CustomerModel implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
 
+    private Integer activeOrderCount;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

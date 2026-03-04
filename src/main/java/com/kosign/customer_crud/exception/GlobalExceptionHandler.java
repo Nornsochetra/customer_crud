@@ -1,10 +1,8 @@
 package com.kosign.customer_crud.exception;
 
-import com.kosign.customer_crud.dto.model.ErrorDetails;
-import com.kosign.customer_crud.dto.model.LockedData;
-import com.kosign.customer_crud.dto.model.StatusInfo;
-import com.kosign.customer_crud.dto.model.ValidationErrorData;
+import com.kosign.customer_crud.dto.model.exceptionModel.*;
 import com.kosign.customer_crud.dto.request.CustomerRequest;
+import com.kosign.customer_crud.dto.request.FullUpdateCustomerRequest;
 import com.kosign.customer_crud.dto.response.APIResponse.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,6 +88,7 @@ public class GlobalExceptionHandler {
 
         //  check hasContact() here and add to same error list
         Object target = ex.getBindingResult().getTarget();
+
         if (target instanceof CustomerRequest request && !request.hasContact()) {
             errors.add(ErrorDetails.builder()
                     .field("email|phone")
@@ -97,7 +96,61 @@ public class GlobalExceptionHandler {
                     .build());
         }
 
+        if (target instanceof FullUpdateCustomerRequest request && !request.hasContact()) {
+            errors.add(ErrorDetails.builder()
+                    .field("email|phone")
+                    .message("Either email or phone must be provided.")
+                    .build());
+        }
+
         return buildValidationResponse(errors);
+    }
+
+    @ExceptionHandler(ContactValidationException.class)
+    public ResponseEntity<ApiResponse<ValidationErrorData>> handleContactValidationErrors(ContactValidationException ex){
+        List<ErrorDetails> errors = new ArrayList<>();
+        errors.add(ErrorDetails.builder()
+                .field("email|phone")
+                .message(ex.getMessage())
+                .build());
+
+        return buildValidationResponse(errors);
+    }
+
+    @ExceptionHandler(DuplicatedEmailException.class)
+    public ResponseEntity<ApiResponse<EmailConflict>> handleDuplicatedEmail(DuplicatedEmailException ex){
+        EmailConflict emailConflict = EmailConflict.builder()
+                .email(ex.getMessage())
+                .build();
+
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code("DUPLICATED_CUSTOMER_EMAIL")
+                .message("A customer with this email already exists.")
+                .build();
+
+        ApiResponse<EmailConflict> response = ApiResponse.<EmailConflict>builder()
+                .status(statusInfo)
+                .data(emailConflict)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(ActiveOrderException.class)
+    public ResponseEntity<ApiResponse<ActiveOrderDetails>> handleActiveOrder(ActiveOrderException ex){
+        ActiveOrderDetails activeOrderDetails = ActiveOrderDetails.builder()
+                .customerId(ex.getCustomerId())
+                .activeOrderCount(ex.getActiveOrderCount())
+                .build();
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code("CUSTOMER_HAS_ACTIVE_ORDERS")
+                .message("Customer cannot be deleted because they have active orders.")
+                .build();
+        ApiResponse<ActiveOrderDetails> response = ApiResponse.<ActiveOrderDetails>builder()
+                .status(statusInfo)
+                .data(activeOrderDetails)
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     private ResponseEntity<ApiResponse<ValidationErrorData>> buildValidationResponse(List<ErrorDetails> errors) {
