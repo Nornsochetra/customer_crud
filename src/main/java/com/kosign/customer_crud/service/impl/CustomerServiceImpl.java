@@ -79,7 +79,7 @@ public class CustomerServiceImpl implements CustomerService {
         return AuthResponse.builder()
                 .accessToken(token)
                 .tokenType("Bearer")
-                .expiresIn(3600)
+                .expiresIn(86400)
                 .userInfo(userInfo)
                 .build();
     }
@@ -140,7 +140,7 @@ public class CustomerServiceImpl implements CustomerService {
         customerModel.setPhone(request.getPhone());
         customerModel.setStatus(Status.ACTIVE);
         customerModel.setPassword(passwordEncoder.encode("123"));
-        customerModel.setRoles(List.of(Roles.CUSTOMER_WRITE));
+        customerModel.setRoles(List.of(Roles.CUSTOMER_READ));
         customerModel.setCreatedAt(LocalDateTime.now());
         customerModel.setUpdatedAt(LocalDateTime.now());
 

@@ -17,6 +17,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,6 +29,7 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('CUSTOMER_READ', 'CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<PayloadResponse<CustomerResponse>>> getAllCustomers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Types types,
@@ -50,6 +52,7 @@ public class CustomerController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> insertCustomer(@RequestBody @Valid CustomerRequest request) {
 
         CustomerResponse customerResponse = customerService.createCustomer(request);
@@ -66,6 +69,7 @@ public class CustomerController {
     }
 
     @GetMapping("/{customerId}")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER_READ', 'CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> getCustomerById(
             @PathVariable @NotNull(message = "Customer id can not be null") Long customerId
     ) {
@@ -82,6 +86,7 @@ public class CustomerController {
     }
 
     @PutMapping("/{customerId}")
+    @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerById(
             @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
             @RequestBody @Valid FullUpdateCustomerRequest request
@@ -100,6 +105,7 @@ public class CustomerController {
     }
 
     @PatchMapping("/{customerId}")
+    @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerPhoneAndStatus(
             @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
             @RequestBody @Valid PartialUpdateCustomerRequest request
@@ -117,6 +123,7 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{customerId}")
+    @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<Void>> deleteCustomerById(
             @PathVariable @NotNull(message = "Customer id can not be null") Long customerId
     ){

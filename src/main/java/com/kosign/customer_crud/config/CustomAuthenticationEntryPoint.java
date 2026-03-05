@@ -35,6 +35,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 .message("Access denied. Authorization: Bearer <accessToken> is required.")
                 .build();
 
+
         ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()
                 .status(statusInfo)
                 .data(null)
