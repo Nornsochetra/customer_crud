@@ -10,8 +10,6 @@ import com.kosign.customer_crud.dto.response.APIResponse.PayloadResponse;
 import com.kosign.customer_crud.dto.response.ModelResponse.AuthResponse;
 import com.kosign.customer_crud.dto.response.ModelResponse.CustomerResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 public interface CustomerService extends UserDetailsService {
@@ -25,13 +23,13 @@ public interface CustomerService extends UserDetailsService {
             int size
     );
 
-    CustomerResponse retrieveCustomerById(@NotNull(message = "Customer id can not be null") Long customerId);
+    CustomerResponse retrieveCustomerById( Long customerId);
 
     CustomerResponse createCustomer(CustomerRequest request);
 
-    CustomerResponse changeCustomerById(@NotNull(message = "Customer id can not be null") Long customerId, @Valid FullUpdateCustomerRequest request);
+    CustomerResponse changeCustomerById(Long customerId, @Valid FullUpdateCustomerRequest request);
 
-    CustomerResponse changeCustomerPhoneAndStatus(@NotNull(message = "Customer id can not be null") Long customerId, @Valid PartialUpdateCustomerRequest request);
+    CustomerResponse changeCustomerPhoneAndStatus( Long customerId, @Valid PartialUpdateCustomerRequest request);
 
-    void deleteCustomerById(@NotNull(message = "Customer id can not be null") Long customerId);
+    void deleteCustomerById(Long customerId);
 }

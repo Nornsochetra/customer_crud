@@ -50,6 +50,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .username(customer.getUsername())
                 .password(customer.getPassword())
                 .authorities(customer.getAuthorities())
+
                 .build();
     }
 

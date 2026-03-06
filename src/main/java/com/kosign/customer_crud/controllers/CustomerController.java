@@ -34,8 +34,8 @@ public class CustomerController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Types types,
             @RequestParam(required = false)  Status status,
-            @RequestParam(defaultValue = "1")@Min(value = 1, message = "Page number must be at least 1") int page,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size number must be at least 1") int size
+            @RequestParam(defaultValue = "1")@Min(value = 1) @NotNull int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1) @NotNull int size
     ){
         PayloadResponse<CustomerResponse> payloadResponse = customerService.retrieveAllCustomers(search,types,status,page,size);
 
@@ -71,7 +71,7 @@ public class CustomerController {
     @GetMapping("/{customerId}")
     @PreAuthorize("hasAnyAuthority('CUSTOMER_READ', 'CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> getCustomerById(
-            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId
+            @PathVariable @NotNull Long customerId
     ) {
         StatusInfo statusInfo = StatusInfo.builder()
                 .code("SUCCESS")
@@ -88,7 +88,7 @@ public class CustomerController {
     @PutMapping("/{customerId}")
     @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerById(
-            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
+            @PathVariable @NotNull Long customerId,
             @RequestBody @Valid FullUpdateCustomerRequest request
     ) {
         CustomerResponse customerResponse = customerService.changeCustomerById(customerId,request);
@@ -107,7 +107,7 @@ public class CustomerController {
     @PatchMapping("/{customerId}")
     @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomerPhoneAndStatus(
-            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId,
+            @PathVariable @NotNull Long customerId,
             @RequestBody @Valid PartialUpdateCustomerRequest request
     ){
         CustomerResponse customerResponse = customerService.changeCustomerPhoneAndStatus(customerId,request);
@@ -125,7 +125,7 @@ public class CustomerController {
     @DeleteMapping("/{customerId}")
     @PreAuthorize("hasAuthority('CUSTOMER_WRITE')")
     public ResponseEntity<ApiResponse<Void>> deleteCustomerById(
-            @PathVariable @NotNull(message = "Customer id can not be null") Long customerId
+            @PathVariable @NotNull Long customerId
     ){
         customerService.deleteCustomerById(customerId);
         StatusInfo statusInfo = StatusInfo.builder()

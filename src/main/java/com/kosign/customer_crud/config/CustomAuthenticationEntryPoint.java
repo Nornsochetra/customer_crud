@@ -24,7 +24,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        // login endpoint → let it pass through to GlobalExceptionHandler
+        // login endpoint - let it pass through to GlobalExceptionHandler
         if (request.getRequestURI().contains("/api/v1/auth/")) {
             throw authException; // rethrow so GlobalExceptionHandler catches it
         }
