@@ -18,60 +18,6 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // handle invalid credential http 401
-    @ExceptionHandler(InvalidCredentialException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBadCredentials(InvalidCredentialException ex){
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("INVALID_CREDENTIALS")
-                .message(ex.getMessage())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse<>(statusInfo,null));
-    }
-
-    // handle account locked http 403
-    @ExceptionHandler(AccountLockedException.class)
-    public ResponseEntity<ApiResponse<LockedData>> handleLockedAccount(AccountLockedException ex) {
-
-        LockedData lockedData = LockedData.builder()
-                .lockedUntil(ex.getLockedUntil())
-                .build();
-
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("ACCOUNT_LOCKED")
-                .message(ex.getMessage())
-                .build();
-
-        ApiResponse<LockedData> response = ApiResponse.<LockedData>builder()
-                .status(statusInfo)
-                .data(lockedData)
-                .build();
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-    }
-
-
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ApiResponse<Object>> handleInactiveAccount(DisabledException ex){
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("ACCOUNT_INACTIVE")
-                .message(ex.getMessage())
-                .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ApiResponse<>(statusInfo,null));
-    }
-
-    // handle customer not found
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCustomerNotFound(NotFoundException ex) {
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("CUSTOMER_NOT_FOUND")
-                .message(ex.getMessage())
-                .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(statusInfo,null));
-    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<ValidationErrorData>> handleValidationErrors(
@@ -89,6 +35,7 @@ public class GlobalExceptionHandler {
 
         //  check hasContact() here and add to same error list
         Object target = ex.getBindingResult().getTarget();
+
 
         if (target instanceof CustomerRequest request && !request.hasContact()) {
             errors.add(ErrorDetails.builder()
@@ -118,42 +65,6 @@ public class GlobalExceptionHandler {
         return buildValidationResponse(errors);
     }
 
-    @ExceptionHandler(DuplicatedEmailException.class)
-    public ResponseEntity<ApiResponse<EmailConflict>> handleDuplicatedEmail(DuplicatedEmailException ex){
-        EmailConflict emailConflict = EmailConflict.builder()
-                .email(ex.getMessage())
-                .build();
-
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("DUPLICATED_CUSTOMER_EMAIL")
-                .message("A customer with this email already exists.")
-                .build();
-
-        ApiResponse<EmailConflict> response = ApiResponse.<EmailConflict>builder()
-                .status(statusInfo)
-                .data(emailConflict)
-                .build();
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-    }
-
-    @ExceptionHandler(ActiveOrderException.class)
-    public ResponseEntity<ApiResponse<ActiveOrderDetails>> handleActiveOrder(ActiveOrderException ex){
-        ActiveOrderDetails activeOrderDetails = ActiveOrderDetails.builder()
-                .customerId(ex.getCustomerId())
-                .activeOrderCount(ex.getActiveOrderCount())
-                .build();
-        StatusInfo statusInfo = StatusInfo.builder()
-                .code("CUSTOMER_HAS_ACTIVE_ORDERS")
-                .message("Customer cannot be deleted because they have active orders.")
-                .build();
-        ApiResponse<ActiveOrderDetails> response = ApiResponse.<ActiveOrderDetails>builder()
-                .status(statusInfo)
-                .data(activeOrderDetails)
-                .build();
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-    }
-
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex){
         StatusInfo statusInfo = StatusInfo.builder()
@@ -180,5 +91,41 @@ public class GlobalExceptionHandler {
                                 .errors(errors)
                                 .build())
                         .build());
+    }
+
+    @ExceptionHandler(CustomerException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCustomerException(CustomerException ex){
+
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code(ex.getStatus().name())
+                .message(ex.getMessage())
+                .build();
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(statusInfo)
+                .data(ex.getData()) // dynamic data
+                .build();
+
+        return ResponseEntity
+                .status(ex.getStatus().getHttpStatus())
+                .body(response);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuthenticationException(AuthenticationException ex){
+
+        StatusInfo statusInfo = StatusInfo.builder()
+                .code(ex.getStatus().name())
+                .message(ex.getMessage())
+                .build();
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(statusInfo)
+                .data(ex.getData()) // dynamic data
+                .build();
+
+        return ResponseEntity
+                .status(ex.getStatus().getHttpStatus())
+                .body(response);
     }
 }

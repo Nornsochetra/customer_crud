@@ -1,10 +1,9 @@
 package com.kosign.customer_crud.service.impl;
 
-import com.kosign.customer_crud.dto.enumeration.Roles;
-import com.kosign.customer_crud.dto.enumeration.Status;
-import com.kosign.customer_crud.dto.enumeration.Types;
+import com.kosign.customer_crud.dto.enumeration.*;
 import com.kosign.customer_crud.dto.model.CustomerModel;
 import com.kosign.customer_crud.dto.model.UserInfo;
+import com.kosign.customer_crud.dto.model.exceptionModel.ActiveOrderDetails;
 import com.kosign.customer_crud.dto.request.AuthRequest;
 import com.kosign.customer_crud.dto.request.CustomerRequest;
 import com.kosign.customer_crud.dto.request.FullUpdateCustomerRequest;
@@ -25,10 +24,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,9 +39,9 @@ public class CustomerServiceImpl implements CustomerService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws InvalidCredentialException {
+    public UserDetails loadUserByUsername(String username) throws AuthenticationException {
         CustomerModel customer = customerRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialException("Username not found"));
+                .orElseThrow(() -> new AuthenticationException(AuthStatus.INVALID_CREDENTIALS,"Username not found"));
 
         return User.builder()
                 .username(customer.getUsername())
@@ -57,14 +54,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public AuthResponse signInUser(AuthRequest authRequest) {
         CustomerModel customerModel = customerRepository.findByUsername(authRequest.getUsername())
-                .orElseThrow(() -> new InvalidCredentialException("Username not found"));
+                .orElseThrow(() -> new AuthenticationException(AuthStatus.INVALID_CREDENTIALS,"Username not found"));
 
         if(customerModel.getStatus() == Status.INACTIVE){
-            throw new DisabledException("Account is inactive. Please contact support!");
+            throw new AuthenticationException(AuthStatus.ACCOUNT_INACTIVE,"Account is inactive. Please contact support!");
         }
 
         if (!passwordEncoder.matches(authRequest.getPassword(), customerModel.getPassword())) {
-            throw new InvalidCredentialException("Invalid username or password");
+            throw new AuthenticationException(AuthStatus.INVALID_CREDENTIALS,"Invalid username or password.");
         }
 
         String token = jwtService.generateToken(customerModel.getUsername());
@@ -95,7 +92,7 @@ public class CustomerServiceImpl implements CustomerService {
         );
 
         if (customerModelPage.isEmpty()) {
-            throw new NotFoundException("Customer not found.");
+            throw new CustomerException(CustomerStatus.CUSTOMER_NOT_FOUND,"Customer not found.");
         }
 
         List<CustomerResponse> customerResponses = customerModelPage.stream()
@@ -118,7 +115,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse retrieveCustomerById(Long customerId) {
         CustomerModel customerModel = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+                .orElseThrow(() -> new CustomerException(CustomerStatus.CUSTOMER_NOT_FOUND,"Customer with id " + customerId + " not found"));
         return customerModel.toCustomerResponse();
     }
 
@@ -131,7 +128,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         if (request.getEmail() != null && !request.getEmail().isBlank()){
             if (customerRepository.existsByEmail(request.getEmail())){
-                throw new DuplicatedEmailException(request.getEmail());
+                throw new CustomerException(CustomerStatus.DUPLICATE_CUSTOMER_EMAIL,"A customer with this email already exists." ,request.getEmail());
             }
         }
         CustomerModel customerModel = new CustomerModel();
@@ -151,7 +148,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse changeCustomerById(Long customerId, FullUpdateCustomerRequest request) {
         CustomerModel customerModel = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+                .orElseThrow(() -> new CustomerException(CustomerStatus.CUSTOMER_NOT_FOUND,"Customer with id " + customerId + " not found"));
 
         if (!request.hasContact()){
             throw new ContactValidationException("Either email or phone must be provided.");
@@ -159,7 +156,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         if (request.getEmail() != null && !request.getEmail().isBlank()){
             if (customerRepository.existsByEmailAndCustomerIdNot(request.getEmail(),customerId)){
-                throw new DuplicatedEmailException(request.getEmail());
+                throw new CustomerException(CustomerStatus.DUPLICATE_CUSTOMER_EMAIL, request.getEmail());
             }
         }
 
@@ -175,7 +172,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse changeCustomerPhoneAndStatus(Long customerId, PartialUpdateCustomerRequest request) {
         CustomerModel customerModel = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+                .orElseThrow(() -> new CustomerException(CustomerStatus.CUSTOMER_NOT_FOUND,"Customer with id " + customerId + " not found"));
 
         customerModel.setPhone(request.getPhone());
         customerModel.setStatus(request.getStatus());
@@ -185,10 +182,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void deleteCustomerById(Long customerId) {
         CustomerModel customerModel = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NotFoundException("Customer with id " + customerId + " not found"));
+                .orElseThrow(() -> new CustomerException(CustomerStatus.CUSTOMER_NOT_FOUND,"Customer with id " + customerId + " not found"));
 
         if(customerModel.getActiveOrderCount() != null && customerModel.getActiveOrderCount() > 0){
-            throw new ActiveOrderException(customerId, customerModel.getActiveOrderCount());
+            throw new CustomerException(CustomerStatus.CUSTOMER_HAS_ACTIVE_ORDERS,"Customer cannot be deleted because they have active orders.",
+                    ActiveOrderDetails.builder()
+                    .customerId(customerId)
+                    .activeOrderCount(customerModel.getActiveOrderCount())
+                    .build());
         }
         customerRepository.deleteById(customerId);
     }
