@@ -2,6 +2,7 @@ package com.kosign.customer_crud.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -9,7 +10,8 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET_KEY = "Y2wV9xYsuA+rY8dVoTh5IATGzW23ZkC8sKvP1lEPQmc=";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
 
     public String generateToken(String username) {
         return Jwts.builder()
