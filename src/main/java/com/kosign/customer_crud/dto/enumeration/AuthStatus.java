@@ -8,8 +8,8 @@ public enum AuthStatus {
     LOGIN_SUCCESS(HttpStatus.OK),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED),
     ACCOUNT_LOCKED(HttpStatus.FORBIDDEN),
-    ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN);
-
+    ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN),
+    OAUTH2_LOGIN_FAILED(HttpStatus.UNAUTHORIZED);
     private final HttpStatus httpStatus;
 
     AuthStatus(HttpStatus httpStatus){

@@ -1,5 +1,6 @@
 package com.kosign.customer_crud.controllers;
 
+import com.kosign.customer_crud.dto.enumeration.CustomerStatus;
 import com.kosign.customer_crud.dto.enumeration.Status;
 import com.kosign.customer_crud.dto.enumeration.Types;
 import com.kosign.customer_crud.dto.model.exceptionModel.StatusInfo;
@@ -40,7 +41,7 @@ public class CustomerController {
         PayloadResponse<CustomerResponse> payloadResponse = customerService.retrieveAllCustomers(search,types,status,page,size);
 
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer list retrieved successfully.")
                 .build();
         return ResponseEntity.ok().body(
@@ -58,7 +59,7 @@ public class CustomerController {
         CustomerResponse customerResponse = customerService.createCustomer(request);
 
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer created successfully.")
                 .build();
         ApiResponse<CustomerResponse> response = ApiResponse.<CustomerResponse>builder()
@@ -74,7 +75,7 @@ public class CustomerController {
             @PathVariable @NotNull Long customerId
     ) {
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer retrieved successfully.")
                 .build();
 
@@ -94,7 +95,7 @@ public class CustomerController {
         CustomerResponse customerResponse = customerService.changeCustomerById(customerId,request);
 
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer updated successfully.")
                 .build();
         ApiResponse<CustomerResponse> response = ApiResponse.<CustomerResponse>builder()
@@ -112,7 +113,7 @@ public class CustomerController {
     ){
         CustomerResponse customerResponse = customerService.changeCustomerPhoneAndStatus(customerId,request);
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer updated successfully.")
                 .build();
         ApiResponse<CustomerResponse> response = ApiResponse.<CustomerResponse>builder()
@@ -129,7 +130,7 @@ public class CustomerController {
     ){
         customerService.deleteCustomerById(customerId);
         StatusInfo statusInfo = StatusInfo.builder()
-                .code("SUCCESS")
+                .code(String.valueOf(CustomerStatus.SUCCESS))
                 .message("Customer deleted successfully.")
                 .build();
         ApiResponse<Void> response = ApiResponse.<Void>builder()

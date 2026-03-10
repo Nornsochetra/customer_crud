@@ -1,5 +1,8 @@
 package com.kosign.customer_crud.config;
 
+import com.kosign.customer_crud.exception.handler.OAuth2FailureHandler;
+import com.kosign.customer_crud.exception.handler.OAuth2SuccessHandler;
+import com.kosign.customer_crud.service.CustomerOAuth2Service;
 import com.kosign.customer_crud.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +29,9 @@ public class SecurityConfig {
     private final CustomerService customerService;
     private final PasswordEncoder passwordEncoder;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomerOAuth2Service customerOAuth2Service;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -37,6 +43,13 @@ public class SecurityConfig {
                                 "/v3/api-docs*/**"
                         ).permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customerOAuth2Service)
+                        )
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

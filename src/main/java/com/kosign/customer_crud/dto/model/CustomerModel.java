@@ -1,5 +1,6 @@
 package com.kosign.customer_crud.dto.model;
 
+import com.kosign.customer_crud.dto.enumeration.AuthProvider;
 import com.kosign.customer_crud.dto.enumeration.Roles;
 import com.kosign.customer_crud.dto.enumeration.Status;
 import com.kosign.customer_crud.dto.enumeration.Types;
@@ -9,9 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.jspecify.annotations.Nullable;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,7 +32,7 @@ public class CustomerModel implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     private String email;
@@ -53,6 +51,9 @@ public class CustomerModel implements UserDetails {
     private Status status = Status.ACTIVE;
 
     private Integer activeOrderCount;
+
+    @Column(name = "auth_provider")
+    private AuthProvider authProvider;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

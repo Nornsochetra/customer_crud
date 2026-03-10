@@ -43,6 +43,10 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerModel customer = customerRepository.findByUsername(username)
                 .orElseThrow(() -> new AuthenticationException(AuthStatus.INVALID_CREDENTIALS,"Username not found"));
 
+        if(customer.getStatus() == Status.INACTIVE){
+            throw new AuthenticationException(AuthStatus.ACCOUNT_INACTIVE,"Account is inactive. Please contact support!");
+        }
+
         return User.builder()
                 .username(customer.getUsername())
                 .password(customer.getPassword())
