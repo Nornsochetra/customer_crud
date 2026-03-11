@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum AuthStatus {
     LOGIN_SUCCESS(HttpStatus.OK),
+    REFRESH_SUCCESS(HttpStatus.OK),
+    LOGOUT_SUCCESS(HttpStatus.OK),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED),
     ACCOUNT_LOCKED(HttpStatus.FORBIDDEN),
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN),

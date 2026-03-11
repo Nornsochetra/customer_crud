@@ -16,6 +16,7 @@ import com.kosign.customer_crud.exception.*;
 import com.kosign.customer_crud.repository.CustomerRepository;
 import com.kosign.customer_crud.service.CustomerService;
 import com.kosign.customer_crud.service.JwtService;
+import com.kosign.customer_crud.service.RedisTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +37,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final JwtService jwtService;
+    private final RedisTokenService redisTokenService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -68,7 +70,11 @@ public class CustomerServiceImpl implements CustomerService {
             throw new AuthenticationException(AuthStatus.INVALID_CREDENTIALS,"Invalid username or password.");
         }
 
-        String token = jwtService.generateToken(customerModel.getUsername());
+        String accessToken = jwtService.generateToken(customerModel.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(customerModel.getUsername());
+
+        redisTokenService.saveAccessToken(accessToken, customerModel.getUsername(), jwtService.getAccessTokenExpiration());
+        redisTokenService.saveRefreshToken(refreshToken,customerModel.getUsername(),jwtService.getRefreshTokenExpiration());
 
         UserInfo userInfo = UserInfo.builder()
                 .customerId(customerModel.getCustomerId())
@@ -79,9 +85,10 @@ public class CustomerServiceImpl implements CustomerService {
                 .build();
 
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(86400)
+                .expiresIn(jwtService.getAccessTokenExpiration())
                 .userInfo(userInfo)
                 .build();
     }
@@ -196,5 +203,30 @@ public class CustomerServiceImpl implements CustomerService {
                     .build());
         }
         customerRepository.deleteById(customerId);
+    }
+
+    @Override
+    public AuthResponse refreshToken(String refreshToken) {
+        if (!redisTokenService.isRefreshTokenValid(refreshToken)){
+            throw new AuthenticationException(AuthStatus.INVALID_CREDENTIALS, "Refresh token expired or invalid");
+        }
+
+        String username = redisTokenService.getUsernameFromRefreshToken(refreshToken);
+        String newAccessToken = jwtService.generateToken(username);
+
+        redisTokenService.saveAccessToken(newAccessToken, username, jwtService.getAccessTokenExpiration());
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getAccessTokenExpiration())
+                .build();
+    }
+
+    @Override
+    public void logout(String accessToken, String refreshToken) {
+        redisTokenService.deleteTokens(accessToken,refreshToken);
+        redisTokenService.blacklistToken(accessToken, jwtService.getAccessTokenExpiration());
     }
 }

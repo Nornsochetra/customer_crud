@@ -5,6 +5,7 @@ import com.kosign.customer_crud.dto.model.CustomerOAuth2User;
 import com.kosign.customer_crud.dto.model.UserInfo;
 import com.kosign.customer_crud.dto.response.ModelResponse.AuthResponse;
 import com.kosign.customer_crud.service.JwtService;
+import com.kosign.customer_crud.service.RedisTokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ import java.io.IOException;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
+    private final RedisTokenService redisTokenService;
 
     @Value("${jwt.expiration}")
     private String expireIn;
@@ -30,10 +32,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         CustomerOAuth2User oAuth2User = (CustomerOAuth2User) authentication.getPrincipal();
         CustomerModel customerModel = oAuth2User.getCustomerModel();
 
-        String token = jwtService.generateToken(customerModel.getUsername());
+        // generate token
+        String accessToken = jwtService.generateToken(customerModel.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(customerModel.getUsername());
+
+        // save token
+        redisTokenService.saveAccessToken(accessToken, customerModel.getUsername(), jwtService.getAccessTokenExpiration());
+        redisTokenService.saveRefreshToken(refreshToken,customerModel.getUsername(),jwtService.getRefreshTokenExpiration());
 
         AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .expiresIn(Long.valueOf(expireIn))
                 .userInfo(UserInfo.builder()
@@ -49,6 +58,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.getWriter().write("""
                 {
                   "accessToken": "%s",
+                  "refreshToken": "%s",
                   "tokenType": "%s",
                   "expiresIn": %d,
                   "data": {
@@ -59,6 +69,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 }
                 """.formatted(
                 authResponse.getAccessToken(),
+                authResponse.getRefreshToken(),
                 authResponse.getTokenType(),
                 authResponse.getExpiresIn(),
                 authResponse.getUserInfo().getCustomerId(),

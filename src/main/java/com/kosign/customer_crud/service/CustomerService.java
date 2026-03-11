@@ -32,4 +32,8 @@ public interface CustomerService extends UserDetailsService {
     CustomerResponse changeCustomerPhoneAndStatus( Long customerId, @Valid PartialUpdateCustomerRequest request);
 
     void deleteCustomerById(Long customerId);
+
+    AuthResponse refreshToken(String refreshToken);
+
+    void logout(String accessToken, String refreshToken);
 }
